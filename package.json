@@ -1,0 +1,47 @@
+{
+  "name": "template-diagnostics",
+  "version": "0.0.0",
+  "author": "katashin",
+  "description": "",
+  "keywords": [
+  ],
+  "license": "MIT",
+  "main": "dist/template-diagnostics.cjs.js",
+  "module": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "files": [
+    "dist",
+    "lib"
+  ],
+  "homepage": "https://github.com/ktsn/template-diagnostics",
+  "bugs": "https://github.com/ktsn/template-diagnostics/issues",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ktsn/template-diagnostics.git"
+  },
+  "scripts": {
+    "prepublish": "npm run clean && npm run test && npm run build",
+    "clean": "rm -rf lib",
+    "build": "tsc -p src",
+    "dev": "npm run test:unit -- -w --reporter min",
+    "lint": "tslint \"src/**/*.ts\" && tslint \"test/**/*.ts\"",
+    "test": "npm run lint && npm run test:unit",
+    "test:unit": "mocha --compilers ts:espower-typescript/guess test/**/*.spec.ts"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.41",
+    "@types/node": "^7.0.18",
+    "@types/power-assert": "1.4.29",
+    "espower-typescript": "^8.0.0",
+    "glob": "^7.1.1",
+    "mocha": "^3.4.1",
+    "power-assert": "^1.4.2",
+    "tslint": "^5.2.0",
+    "tslint-config-ktsn": "^2.0.1",
+    "vue": "https://github.com/DanielRosenwasser/vue#540a38fb21adb7a7bc394c65e23e6cffb36cd867"
+  },
+  "dependencies": {
+    "typescript": "^2.3.2",
+    "vue-template-compiler": "2.2.1"
+  }
+}

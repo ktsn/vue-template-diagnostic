@@ -1,0 +1,5 @@
+# Template Diagnostics
+
+## License
+
+MIT
