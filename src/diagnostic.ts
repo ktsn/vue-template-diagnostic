@@ -1,7 +1,9 @@
 import * as ts from 'typescript'
 
 export interface Diagnostic {
-
+  message: string
+  start: number
+  end: number
 }
 
 export class Checker {
