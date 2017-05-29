@@ -1,10 +1,10 @@
-import { Node, Expression, BinaryExpression } from 'estree'
+import * as ESTree from 'estree'
 import { SymbolTable } from './symbols'
 import { Diagnostic } from './diagnostic'
 
-import { Type, BuiltIn, isAny, isNumber, isString, isSymbol, isFunction, isObject } from './types'
+import { Type, TypeKind, BuiltIn, isAny, isNumber, isString, isSymbol, isFunction, isObject } from './types'
 
-export function checkExpression(expression: Expression, scope: SymbolTable): Diagnostic[] {
+export function checkExpression(expression: ESTree.Expression, scope: SymbolTable): Diagnostic[] {
   const checker = new ExpressionChecker(scope)
   return checker.check(expression)
 }
@@ -14,31 +14,28 @@ class ExpressionChecker {
 
   constructor(private scope: SymbolTable) {}
 
-  check(expression: Expression): Diagnostic[] {
+  check(expression: ESTree.Expression): Diagnostic[] {
     this.diagnostics = []
     this.typeOf(expression)
     return this.diagnostics
   }
 
-  private typeOf(node: Node): Type {
+  private typeOf(node: ESTree.Node): Type {
     switch (node.type) {
       case 'BinaryExpression':
         return this.typeOfBinaryExpression(node)
-
+      case 'ObjectExpression':
+        return this.typeOfObjectExpression(node)
       case 'Identifier':
-        const symbol = this.scope.getByName(node.name)
-        if (!symbol) {
-          this.addDiagnostic(node, `'${node.name}' is not defined`)
-          return BuiltIn.any
-        }
-        return symbol.type
-
+        return this.typeOfIdentifier(node)
+      case 'Literal':
+        return this.typeOfLiteral(node)
       default:
         return BuiltIn.any
     }
   }
 
-  private typeOfBinaryExpression(node: BinaryExpression): Type {
+  private typeOfBinaryExpression(node: ESTree.BinaryExpression): Type {
     const left = this.typeOf(node.left)
     const right = this.typeOf(node.right)
 
@@ -128,7 +125,7 @@ class ExpressionChecker {
           return BuiltIn.any
         }
 
-        if (isObject(right)) {
+        if (!isObject(right)) {
           this.addDiagnostic(
             node.right,
             `The right-hand side of a 'in' operator must be of type 'any' or 'object'`
@@ -139,15 +136,49 @@ class ExpressionChecker {
         return BuiltIn.boolean
 
       default:
-        this.addDiagnostic(
-          node,
-          `Unknown binary operator '${node.operator}' is found`
-        )
-        return BuiltIn.any
+        throw new Error(`Unknown binary operator '${node.operator}'`)
     }
   }
 
-  private addDiagnostic(node: Node, message: string): void {
+  private typeOfObjectExpression(node: ESTree.ObjectExpression): Type {
+    return {
+      name: 'Object',
+      kind: TypeKind.Object
+    }
+  }
+
+  private typeOfIdentifier(node: ESTree.Identifier): Type {
+    const symbol = this.scope.getByName(node.name)
+    if (!symbol) {
+      this.addDiagnostic(node, `'${node.name}' is not defined`)
+      return BuiltIn.any
+    }
+    return symbol.type
+  }
+
+  private typeOfLiteral(node: ESTree.Literal): Type {
+    switch (typeof node.value) {
+      case 'string':
+        return BuiltIn.string
+      case 'number':
+        return BuiltIn.number
+      case 'boolean':
+        return BuiltIn.boolean
+      case 'object':
+        if (!node.value) {
+          return BuiltIn.null
+        } else {
+          return {
+            name: 'Object',
+            kind: TypeKind.Object
+          }
+        }
+      default:
+        throw new Error(`Unknown literal '${node.value}'`)
+    }
+  }
+
+  private addDiagnostic(node: ESTree.Node, message: string): void {
     this.diagnostics.push({
       message,
       start: node.range![0],
