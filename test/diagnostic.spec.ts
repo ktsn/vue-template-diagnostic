@@ -1,7 +1,6 @@
 import * as assert from 'power-assert'
 import * as ts from 'typescript'
 import { compile } from 'vue-template-compiler'
-import { modifyVueSource } from '../src/modify'
 import { Checker } from '../src/diagnostic'
 
 describe('Diagnostic', () => {
