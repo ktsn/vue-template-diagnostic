@@ -9,19 +9,16 @@ const { number } = BuiltIn
 
 describe('Type Checker', () => {
   it('should report if there are some undefined variables', () => {
-    const { result } = parseExpression('foo + bar + 123') as any
-    const scope = new SymbolTable([
-      {
-        name: 'foo',
-        type: number
-      }
-    ])
-    const res = checkExpression(result, scope)
-    assert.deepStrictEqual(res, [
+    test('foo + bar + 123', [
       {
         message: '\'bar\' is not defined',
         start: 6,
         end: 9
+      }
+    ], [
+      {
+        name: 'foo',
+        type: number
       }
     ])
   })
@@ -174,7 +171,7 @@ function test(
   diagnostics: Diagnostic[] = [],
   scope: Symbol[] = []
 ) {
-  const { result } = parseExpression(expression) as any
-  const res = checkExpression(result, new SymbolTable(scope))
+  const { value } = parseExpression(expression) as any
+  const res = checkExpression(value, new SymbolTable(scope))
   assert.deepStrictEqual(res, diagnostics)
 }

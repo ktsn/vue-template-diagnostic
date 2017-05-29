@@ -3,9 +3,9 @@ import { parseExpression } from '../src/parser'
 
 describe('Parser', () => {
   it('should parse template expression', () => {
-    const { result } = parseExpression('1 + 2') as any
-    assert(result.type === 'BinaryExpression')
-    assert(result.operator === '+')
+    const { value } = parseExpression('1 + 2') as any
+    assert(value.type === 'BinaryExpression')
+    assert(value.operator === '+')
   })
 
   it('should provide an error if multiple expressions are provided', () => {

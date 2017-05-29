@@ -1,11 +1,11 @@
-export type Either<E, R> = Error<E> | Result<R>
+export type Either<E, V> = Error<E> | Value<V>
 
 export interface Error<E> {
   error: E,
-  result?: null
+  value?: null
 }
 
-export interface Result<R> {
+export interface Value<V> {
   error?: null,
-  result: R
+  value: V
 }

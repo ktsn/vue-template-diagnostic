@@ -27,6 +27,6 @@ export function parseExpression(expression: string): Either<string, Expression> 
   }
 
   return {
-    result: statement.expression
+    value: statement.expression
   }
 }
