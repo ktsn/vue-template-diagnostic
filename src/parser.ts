@@ -1,32 +1,26 @@
 import { Expression } from 'estree'
 import { parse } from 'esprima'
 import { Type } from './types'
-import { Either } from './utils'
+import { Failable, fail, success } from './utils'
 
-export function parseExpression(expression: string): Either<string, Expression> {
+export function parseExpression(expression: string): Failable<string, Expression> {
   let program
   try {
     program = parse(expression, {
       range: true
     })
   } catch (err) {
-    return { error: err.message }
+    return fail(err.message)
   }
 
   if (program.body.length >= 2) {
-    return {
-      error: 'Template expression should have only one expression'
-    }
+    return fail('Template expression should have only one expression')
   }
 
   const statement = program.body[0]
   if (statement.type !== 'ExpressionStatement') {
-    return {
-      error: 'Template expression must be an expression'
-    }
+    return fail('Template expression must be an expression')
   }
 
-  return {
-    value: statement.expression
-  }
+  return success(statement.expression)
 }
