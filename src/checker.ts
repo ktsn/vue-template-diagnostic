@@ -22,6 +22,8 @@ class ExpressionChecker {
 
   private typeOf(node: ESTree.Node): Type {
     switch (node.type) {
+      case 'CallExpression':
+        return this.typeOfCallExpression(node)
       case 'BinaryExpression':
         return this.typeOfBinaryExpression(node)
       case 'ObjectExpression':
@@ -33,6 +35,22 @@ class ExpressionChecker {
       default:
         return BuiltIn.any
     }
+  }
+
+  private typeOfCallExpression(node: ESTree.CallExpression): Type {
+    const callee = this.typeOf(node.callee)
+    // TODO: Check argument types
+    const args = node.arguments.map(arg => this.typeOf(arg))
+
+    if (!isFunction(callee) && !isAny(callee)) {
+      this.addDiagnostic(
+        node,
+        `Type '${callee.name}' has no compatible call signatures`
+      )
+    }
+
+    // TODO: Return appropriate return type
+    return BuiltIn.any
   }
 
   private typeOfBinaryExpression(node: ESTree.BinaryExpression): Type {

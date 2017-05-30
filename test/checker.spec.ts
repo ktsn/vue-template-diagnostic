@@ -5,7 +5,12 @@ import { SymbolTable, Symbol } from '../src/symbols'
 import { Diagnostic } from '../src/diagnostic'
 import { Type, TypeKind, BuiltIn } from '../src/types'
 
-const { number } = BuiltIn
+const { number, string } = BuiltIn
+
+const func = {
+  name: 'Function',
+  kind: TypeKind.Function
+} as Type
 
 describe('Type Checker', () => {
   it('should report if there are some undefined variables', () => {
@@ -21,6 +26,32 @@ describe('Type Checker', () => {
         type: number
       }
     ])
+  })
+
+  describe('call expression', () => {
+    it('should pass a call expression for function type', () => {
+      test('test(1 + 3)', [], [
+        {
+          name: 'test',
+          type: func
+        }
+      ])
+    })
+
+    it('should report a call expression without any call signatures', () => {
+      test('12 + foo("bar")', [
+        {
+          message: `Type 'string' has no compatible call signatures`,
+          start: 5,
+          end: 15
+        }
+      ], [
+        {
+          name: 'foo',
+          type: string
+        }
+      ])
+    })
   })
 
   describe('binary operator', () => {
