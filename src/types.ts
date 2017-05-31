@@ -25,7 +25,6 @@ export type Type =
 
 export interface BaseType {
   name: string
-  kind: TypeKind
 }
 
 export interface Any extends BaseType {

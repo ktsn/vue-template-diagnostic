@@ -73,8 +73,18 @@ describe('Type Checker', () => {
       ])
     })
 
-    it('should pass a "===" operator with any types', () => {
-      test('12 === {}')
+    it('should pass a "===" operator with the same types', () => {
+      test('12 === 456')
+    })
+
+    it('should report if a "!==" operator used with different types', () => {
+      test('123 !== true', [
+        {
+          message: `The binary operator '!==' cannot be applied to types 'number' and 'boolean'`,
+          start: 0,
+          end: 12
+        }
+      ])
     })
 
     it('should pass an arithmetic operator with numbers', () => {

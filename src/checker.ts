@@ -61,27 +61,35 @@ class ExpressionChecker {
       return BuiltIn.any
     }
 
+    // https://github.com/Microsoft/TypeScript/blob/v2.3.4/doc/spec.md#4.19
     switch (node.operator) {
+      case '<':
+      case '>':
+      case '<=':
+      case '>=':
       case '==':
       case '!=':
       case '===':
       case '!==':
+        if (left.kind !== right.kind) {
+          this.addDiagnostic(
+            node,
+            `The binary operator '${node.operator}' cannot be applied to types '${left.name}' and '${right.name}'`
+          )
+        }
         return BuiltIn.boolean
 
-      case '<':
-      case '<=':
-      case '>':
-      case '>=':
-      case '<<':
-      case '>>':
-      case '-':
       case '*':
       case '/':
       case '%':
+      case '-':
+      case '<<':
+      case '>>':
+      case '>>>':
       case '**':
+      case '&':
       case '|':
       case '^':
-      case '&':
         if (!isNumber(left)) {
           this.addDiagnostic(
             node.left,
