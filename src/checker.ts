@@ -30,6 +30,8 @@ class ExpressionChecker {
         return this.typeOfCallExpression(node)
       case 'BinaryExpression':
         return this.typeOfBinaryExpression(node)
+      case 'LogicalExpression':
+        return this.typeOfLogicalExpression(node)
       case 'ObjectExpression':
         return this.typeOfObjectExpression(node)
       case 'MemberExpression':
@@ -169,6 +171,19 @@ class ExpressionChecker {
 
       default:
         throw new Error(`Unknown binary operator '${node.operator}'`)
+    }
+  }
+
+  private typeOfLogicalExpression(node: ESTree.LogicalExpression): Type {
+    const left = this.typeOf(node.left)
+    const right = this.typeOf(node.right)
+
+    switch (node.operator) {
+      case '&&':
+      case '||':
+        return left.kind === right.kind ? right : this.getType(TypeKind.Any)
+      default:
+        throw new Error(`Unknown logical operator '${node.operator}'`)
     }
   }
 
