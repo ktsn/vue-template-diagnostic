@@ -1,4 +1,4 @@
-import { SimpleSymbolTable, SymbolTable } from '../../src/symbols'
+import { Symbol, SimpleSymbolTable, SymbolTable } from '../../src/symbols'
 import { Type, TypeKind, TypeRepository, AnyTypeArguments, anyType, nullType, undefinedType } from '../../src/types'
 
 const emptyMembers = new SimpleSymbolTable([])
@@ -34,11 +34,11 @@ export const func: Type = {
   }]
 }
 
-export function obj(name: string, members: SymbolTable = emptyMembers) {
+export function obj(name: string, members: Symbol[] = []) {
   return {
     name,
     kind: TypeKind.Other,
-    members,
+    members: new SimpleSymbolTable(members),
     callSignatures: []
   }
 }

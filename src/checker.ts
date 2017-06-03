@@ -32,6 +32,8 @@ class ExpressionChecker {
         return this.typeOfBinaryExpression(node)
       case 'ObjectExpression':
         return this.typeOfObjectExpression(node)
+      case 'MemberExpression':
+        return this.typeOfMemberExpression(node)
       case 'Identifier':
         return this.typeOfIdentifier(node)
       case 'Literal':
@@ -171,6 +173,28 @@ class ExpressionChecker {
   }
 
   private typeOfObjectExpression(node: ESTree.ObjectExpression): Type {
+    return this.getType(TypeKind.Any)
+  }
+
+  private typeOfMemberExpression(node: ESTree.MemberExpression): Type {
+    const parent = this.typeOf(node.object)
+    const prop = node.property
+
+    // TODO: supporting index signatures
+
+    // Check the `foo.bar` syntax
+    if (!node.computed && prop.type === 'Identifier') {
+      const child = parent.members.getByName(prop.name)
+      if (!child) {
+        this.addDiagnostic(
+          node,
+          `Property '${prop.name}' does not exist on type '${parent.name}'`
+        )
+        return this.getType(TypeKind.Any)
+      }
+      return child.type
+    }
+
     return this.getType(TypeKind.Any)
   }
 

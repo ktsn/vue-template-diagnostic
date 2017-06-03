@@ -47,6 +47,41 @@ describe('Type Checker', () => {
     })
   })
 
+  describe('member expression', () => {
+    it('should pass if a parent object has an appropriate property', () => {
+      test('foo.bar.baz', [], [
+        {
+          name: 'foo',
+          type: obj('Foo', [{
+            name: 'bar',
+            type: obj('Bar', [{
+              name: 'baz',
+              type: string
+            }])
+          }])
+        }
+      ])
+    })
+
+    it('should report if a parent object does not have any appropriate properties', () => {
+      test('foo.bar.baz', [
+        {
+          message: `Property 'baz' does not exist on type 'number'`,
+          start: 0,
+          end: 11
+        }
+      ], [
+        {
+          name: 'foo',
+          type: obj('Foo', [{
+            name: 'bar',
+            type: number
+          }])
+        }
+      ])
+    })
+  })
+
   describe('binary operator', () => {
     it('should pass a "+" operator with numbers', () => {
       test('1 + 2 + 3')
