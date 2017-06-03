@@ -1,102 +1,84 @@
+import { SymbolTable, SimpleSymbolTable, AnySymbolTable } from './symbols'
+
 export enum TypeKind {
   Any,
   String,
   Number,
   Boolean,
-  Symbol,
   Null,
   Undefined,
-  Array,
-  Object,
-  Function
+  Other
 }
 
-export type Type =
-  Any
-  | String
-  | Number
-  | Boolean
-  | Symbol
-  | Null
-  | Undefined
-  | Array
-  | Object
-  | Function
-
-export interface BaseType {
+export interface Type {
   name: string
+  kind: TypeKind
+  members: SymbolTable
+  callSignatures: CallSignature[]
 }
 
-export interface Any extends BaseType {
-  kind: TypeKind.Any
+export interface TypeRepository {
+  getTypeByKind(kind: TypeKind): Type
 }
 
-export interface String extends BaseType {
-  kind: TypeKind.String
+export interface CallSignature {
+  argTypes: TypeArguments
+  returnType: Type
 }
 
-export interface Number extends BaseType {
-  kind: TypeKind.Number
+export interface TypeArguments {
+  readonly length: number
+  get(index: number): Type
 }
 
-export interface Boolean extends BaseType {
-  kind: TypeKind.Boolean
+export class AnyTypeArguments implements TypeArguments {
+  get length() {
+    return Number.POSITIVE_INFINITY
+  }
+
+  get(index: number): Type {
+    return new AnyType()
+  }
 }
 
-export interface Symbol extends BaseType {
-  kind: TypeKind.Symbol
+export class SimpleTypeArguments implements TypeArguments {
+  constructor(private types: Type[]) {}
+
+  get length() {
+    return this.types.length
+  }
+
+  get(index: number): Type {
+    return this.types[index]
+  }
 }
 
-export interface Null extends BaseType {
-  kind: TypeKind.Null
+export class AnyType implements Type {
+  name = 'any'
+  kind = TypeKind.Any
+  members = new AnySymbolTable()
+  callSignatures = [{
+    argTypes: new AnyTypeArguments(),
+    returnType: this as AnyType
+  }]
 }
+export const anyType = new AnyType()
 
-export interface Undefined extends BaseType {
-  kind: TypeKind.Undefined
+export class NullType implements Type {
+  name = 'null'
+  kind = TypeKind.Null
+  members = new SimpleSymbolTable([])
+  callSignatures = []
 }
+export const nullType = new NullType()
 
-export interface Array extends BaseType {
-  kind: TypeKind.Array
+export class UndefinedType implements Type {
+  name = 'undefined'
+  kind = TypeKind.Undefined
+  members = new SimpleSymbolTable([])
+  callSignatures = []
 }
-
-export interface Object extends BaseType {
-  kind: TypeKind.Object
-}
-
-export interface Function extends BaseType {
-  kind: TypeKind.Function
-}
-
-export const BuiltIn = {
-  any: {
-    name: 'any',
-    kind: TypeKind.Any
-  } as Type,
-  string: {
-    name: 'string',
-    kind: TypeKind.String
-  } as Type,
-  number: {
-    name: 'number',
-    kind: TypeKind.Number
-  } as Type,
-  boolean: {
-    name: 'boolean',
-    kind: TypeKind.Boolean
-  } as Type,
-  symbol: {
-    name: 'symbol',
-    kind: TypeKind.Symbol
-  } as Type,
-  null: {
-    name: 'null',
-    kind: TypeKind.Null
-  } as Type,
-  undefined: {
-    name: 'undefined',
-    kind: TypeKind.Undefined
-  } as Type
-}
+export const undefinedType = new UndefinedType()
 
 export function subtypeOf(sub: Type, parent: Type): boolean {
   if (
@@ -111,28 +93,22 @@ export function subtypeOf(sub: Type, parent: Type): boolean {
   return false
 }
 
-export function isAny(type: Type): type is Any {
+export function isAny(type: Type): boolean {
   return type.kind === TypeKind.Any
 }
 
-export function isNumber(type: Type): type is Number {
+export function isNumber(type: Type): boolean {
   return type.kind === TypeKind.Number
 }
 
-export function isString(type: Type): type is String {
+export function isString(type: Type): boolean {
   return type.kind === TypeKind.String
 }
 
-export function isSymbol(type: Type): type is Symbol {
-  return type.kind === TypeKind.Symbol
+export function isFunction(type: Type): boolean {
+  return type.callSignatures.length > 0
 }
 
-export function isFunction(type: Type): type is Function {
-  return type.kind === TypeKind.Function
-}
-
-export function isObject(type: Type): type is Object {
-  return type.kind === TypeKind.Object
-    || type.kind === TypeKind.Array
-    || type.kind === TypeKind.Function
+export function isObject(type: Type): boolean {
+  return type.kind === TypeKind.Other
 }

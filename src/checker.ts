@@ -2,17 +2,21 @@ import * as ESTree from 'estree'
 import { SymbolTable } from './symbols'
 import { Diagnostic } from './diagnostic'
 
-import { Type, TypeKind, BuiltIn, isAny, isNumber, isString, isSymbol, isFunction, isObject } from './types'
+import { Type, TypeKind, TypeRepository, isAny, isNumber, isString, isFunction, isObject } from './types'
 
-export function checkExpression(expression: ESTree.Expression, scope: SymbolTable): Diagnostic[] {
-  const checker = new ExpressionChecker(scope)
+export function checkExpression(
+  expression: ESTree.Expression,
+  scope: SymbolTable,
+  repository: TypeRepository
+): Diagnostic[] {
+  const checker = new ExpressionChecker(scope, repository)
   return checker.check(expression)
 }
 
 class ExpressionChecker {
   private diagnostics: Diagnostic[]
 
-  constructor(private scope: SymbolTable) {}
+  constructor(private scope: SymbolTable, private repository: TypeRepository) {}
 
   check(expression: ESTree.Expression): Diagnostic[] {
     this.diagnostics = []
@@ -33,7 +37,7 @@ class ExpressionChecker {
       case 'Literal':
         return this.typeOfLiteral(node)
       default:
-        return BuiltIn.any
+        return this.getType(TypeKind.Any)
     }
   }
 
@@ -50,7 +54,7 @@ class ExpressionChecker {
     }
 
     // TODO: Return appropriate return type
-    return BuiltIn.any
+    return this.getType(TypeKind.Any)
   }
 
   private typeOfBinaryExpression(node: ESTree.BinaryExpression): Type {
@@ -58,7 +62,7 @@ class ExpressionChecker {
     const right = this.typeOf(node.right)
 
     if (isAny(left) || isAny(right)) {
-      return BuiltIn.any
+      return this.getType(TypeKind.Any)
     }
 
     // https://github.com/Microsoft/TypeScript/blob/v2.3.4/doc/spec.md#4.19
@@ -77,7 +81,7 @@ class ExpressionChecker {
             `The binary operator '${node.operator}' cannot be applied to types '${left.name}' and '${right.name}'`
           )
         }
-        return BuiltIn.boolean
+        return this.getType(TypeKind.Boolean)
 
       case '*':
       case '/':
@@ -95,7 +99,7 @@ class ExpressionChecker {
             node.left,
             `The left-hand side of a binary operator '${node.operator}' must be of type 'number' or 'any'`
           )
-          return BuiltIn.any
+          return this.getType(TypeKind.Any)
         }
 
         if (!isNumber(right)) {
@@ -103,25 +107,25 @@ class ExpressionChecker {
             node.right,
             `The right-hand side of a binary operator '${node.operator}' must be of type 'number' or 'any'`
           )
-          return BuiltIn.any
+          return this.getType(TypeKind.Any)
         }
 
-        return BuiltIn.number
+        return this.getType(TypeKind.Number)
 
       case '+':
         if (isString(left) || isString(right)) {
-          return BuiltIn.string
+          return this.getType(TypeKind.String)
         }
 
         if (isNumber(left) && isNumber(right)) {
-          return BuiltIn.number
+          return this.getType(TypeKind.Number)
         }
 
         this.addDiagnostic(
           node,
           `The binary operator '+' cannot be applied to type '${left.name}' and '${right.name}'`
         )
-        return BuiltIn.any
+        return this.getType(TypeKind.Any)
 
       case 'instanceof':
         if (!isObject(left)) {
@@ -129,7 +133,7 @@ class ExpressionChecker {
             node.left,
             `The left-hand side of 'instanceof' must be of type 'any' or 'object'`
           )
-          return BuiltIn.any
+          return this.getType(TypeKind.Any)
         }
 
         if (!isFunction(right)) {
@@ -137,18 +141,18 @@ class ExpressionChecker {
             node.right,
             `The right-hand side of 'instanceof' must be of type 'any' or 'Function'`
           )
-          return BuiltIn.any
+          return this.getType(TypeKind.Any)
         }
 
-        return BuiltIn.boolean
+        return this.getType(TypeKind.Boolean)
 
       case 'in':
-        if (!isNumber(left) && !isString(left) && !isSymbol(left)) {
+        if (!isNumber(left) && !isString(left)) {
           this.addDiagnostic(
             node.left,
             `The left-hand side of a 'in' operator must be of type 'any', 'number', 'string' or 'symbol'`
           )
-          return BuiltIn.any
+          return this.getType(TypeKind.Any)
         }
 
         if (!isObject(right)) {
@@ -156,10 +160,10 @@ class ExpressionChecker {
             node.right,
             `The right-hand side of a 'in' operator must be of type 'any' or 'object'`
           )
-          return BuiltIn.any
+          return this.getType(TypeKind.Any)
         }
 
-        return BuiltIn.boolean
+        return this.getType(TypeKind.Boolean)
 
       default:
         throw new Error(`Unknown binary operator '${node.operator}'`)
@@ -167,17 +171,14 @@ class ExpressionChecker {
   }
 
   private typeOfObjectExpression(node: ESTree.ObjectExpression): Type {
-    return {
-      name: 'Object',
-      kind: TypeKind.Object
-    }
+    return this.getType(TypeKind.Any)
   }
 
   private typeOfIdentifier(node: ESTree.Identifier): Type {
     const symbol = this.scope.getByName(node.name)
     if (!symbol) {
       this.addDiagnostic(node, `'${node.name}' is not defined`)
-      return BuiltIn.any
+      return this.getType(TypeKind.Any)
     }
     return symbol.type
   }
@@ -185,19 +186,16 @@ class ExpressionChecker {
   private typeOfLiteral(node: ESTree.Literal): Type {
     switch (typeof node.value) {
       case 'string':
-        return BuiltIn.string
+        return this.getType(TypeKind.String)
       case 'number':
-        return BuiltIn.number
+        return this.getType(TypeKind.Number)
       case 'boolean':
-        return BuiltIn.boolean
+        return this.getType(TypeKind.Boolean)
       case 'object':
         if (!node.value) {
-          return BuiltIn.null
+          return this.getType(TypeKind.Null)
         } else {
-          return {
-            name: 'Object',
-            kind: TypeKind.Object
-          }
+          return this.getType(TypeKind.Any)
         }
       default:
         throw new Error(`Unknown literal '${node.value}'`)
@@ -210,5 +208,9 @@ class ExpressionChecker {
       start: node.range![0],
       end: node.range![1]
     })
+  }
+
+  private getType(kind: TypeKind): Type {
+    return this.repository.getTypeByKind(kind)
   }
 }

@@ -1,11 +1,29 @@
-import { Type } from './types'
+import { Type, anyType } from './types'
 
 export interface Symbol {
   name: string
   type: Type
 }
 
-export class SymbolTable {
+export interface SymbolTable {
+  getByName(name: string): Symbol | undefined
+  concat(table: SymbolTable): SymbolTable
+}
+
+export class AnySymbolTable implements SymbolTable {
+  getByName(name: string): Symbol {
+    return {
+      name,
+      type: anyType
+    }
+  }
+
+  concat(table: SymbolTable): SymbolTable {
+    return this
+  }
+}
+
+export class SimpleSymbolTable {
   private table = new Map<string, Symbol>()
 
   constructor(symbols: Symbol[]) {
@@ -18,11 +36,12 @@ export class SymbolTable {
     return this.table.get(name)
   }
 
-  concat(table: SymbolTable): SymbolTable {
+  concat(table: SimpleSymbolTable | AnySymbolTable): SymbolTable {
+    if (table instanceof AnySymbolTable) return table
     const symbols: Symbol[] = []
     this.forEach(value => symbols.push(value))
     table.forEach(value => symbols.push(value))
-    return new SymbolTable(symbols)
+    return new SimpleSymbolTable(symbols)
   }
 
   forEach(fn: (symbol: Symbol, name: string) => void): void {

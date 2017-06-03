@@ -1,16 +1,9 @@
 import * as assert from 'power-assert'
 import { parseExpression } from '../src/parser'
 import { checkExpression } from '../src/checker'
-import { SymbolTable, Symbol } from '../src/symbols'
+import { SimpleSymbolTable, Symbol } from '../src/symbols'
 import { Diagnostic } from '../src/diagnostic'
-import { Type, TypeKind, BuiltIn } from '../src/types'
-
-const { number, string } = BuiltIn
-
-const func = {
-  name: 'Function',
-  kind: TypeKind.Function
-} as Type
+import { number, string, boolean, func, obj, typeRepository } from './stubs/type-repository'
 
 describe('Type Checker', () => {
   it('should report if there are some undefined variables', () => {
@@ -113,17 +106,11 @@ describe('Type Checker', () => {
       test('foo instanceof Bar', [], [
         {
           name: 'foo',
-          type: {
-            name: 'Bar',
-            kind: TypeKind.Object
-          }
+          type: obj('Bar')
         },
         {
           name: 'Bar',
-          type: {
-            name: 'typeof Bar',
-            kind: TypeKind.Function
-          }
+          type: func
         }
       ])
     })
@@ -138,10 +125,7 @@ describe('Type Checker', () => {
       ], [
         {
           name: 'Bar',
-          type: {
-            name: 'typeof Bar',
-            kind: TypeKind.Function
-          }
+          type: func
         }
       ])
     })
@@ -156,32 +140,26 @@ describe('Type Checker', () => {
       ], [
         {
           name: 'foo',
-          type: {
-            name: 'Bar',
-            kind: TypeKind.Object
-          }
+          type: obj('Bar')
         },
         {
           name: 'bar',
-          type: {
-            name: 'Bar',
-            kind: TypeKind.Object
-          }
+          type: obj('Bar')
         }
       ])
     })
 
-    it('should pass an "in" operator with symbol and object', () => {
-      test('sym in {}', [], [
+    it('should pass an "in" operator with string and object', () => {
+      test('str in {}', [], [
         {
-          name: 'sym',
-          type: BuiltIn.symbol
+          name: 'str',
+          type: string
         }
       ])
     })
 
     it('should report if the left-hand side of "in" operator is not a number, string or symbol', () => {
-      test('foo in {}', [
+      test('foo in bar', [
         {
           message: `The left-hand side of a 'in' operator must be of type 'any', 'number', 'string' or 'symbol'`,
           start: 0,
@@ -190,7 +168,11 @@ describe('Type Checker', () => {
       ], [
         {
           name: 'foo',
-          type: BuiltIn.boolean
+          type: boolean
+        },
+        {
+          name: 'bar',
+          type: obj('Object')
         }
       ])
     })
@@ -213,6 +195,6 @@ function test(
   scope: Symbol[] = []
 ) {
   const { value } = parseExpression(expression) as any
-  const res = checkExpression(value, new SymbolTable(scope))
+  const res = checkExpression(value, new SimpleSymbolTable(scope), typeRepository)
   assert.deepStrictEqual(res, diagnostics)
 }
