@@ -1,4 +1,4 @@
-import { Type, anyType } from './types'
+import { Type, anyType } from './type'
 
 export interface Symbol {
   name: string

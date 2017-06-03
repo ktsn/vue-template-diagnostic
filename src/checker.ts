@@ -1,8 +1,8 @@
 import * as ESTree from 'estree'
-import { SymbolTable } from './symbols'
+import { SymbolTable } from './symbol'
 import { Diagnostic } from './diagnostic'
 
-import { Type, TypeKind, TypeRepository, isAny, isNumber, isString, isFunction, isObject } from './types'
+import { Type, TypeKind, TypeRepository, isAny, isNumber, isString, isFunction, isObject } from './type'
 
 export function checkExpression(
   expression: ESTree.Expression,

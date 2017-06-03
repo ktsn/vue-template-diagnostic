@@ -1,4 +1,4 @@
-import { SymbolTable, SimpleSymbolTable, AnySymbolTable } from './symbols'
+import { SymbolTable, SimpleSymbolTable, AnySymbolTable } from './symbol'
 
 export enum TypeKind {
   Any,
@@ -79,6 +79,10 @@ export class UndefinedType implements Type {
   callSignatures = []
 }
 export const undefinedType = new UndefinedType()
+
+export function unionType(...types: Type[]): Type {
+
+}
 
 export function subtypeOf(sub: Type, parent: Type): boolean {
   if (

@@ -1,7 +1,7 @@
 import * as assert from 'power-assert'
 import { parseExpression } from '../src/parser'
 import { checkExpression } from '../src/checker'
-import { SimpleSymbolTable, Symbol } from '../src/symbols'
+import { SimpleSymbolTable, Symbol } from '../src/symbol'
 import { Diagnostic } from '../src/diagnostic'
 import { number, string, boolean, func, obj, typeRepository } from './stubs/type-repository'
 

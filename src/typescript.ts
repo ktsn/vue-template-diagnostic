@@ -1,6 +1,6 @@
 import * as assert from 'assert'
 import * as ts from 'typescript'
-import { Symbol, SimpleSymbolTable, SymbolTable } from './symbols'
+import { Symbol, SimpleSymbolTable, SymbolTable } from './symbol'
 import { Type, TypeKind, TypeRepository, TypeArguments, SimpleTypeArguments, CallSignature, anyType, nullType, undefinedType } from './types'
 
 export interface TypeScriptContext {

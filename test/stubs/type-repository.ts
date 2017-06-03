@@ -1,5 +1,5 @@
-import { Symbol, SimpleSymbolTable, SymbolTable } from '../../src/symbols'
-import { Type, TypeKind, TypeRepository, AnyTypeArguments, anyType, nullType, undefinedType } from '../../src/types'
+import { Symbol, SimpleSymbolTable, SymbolTable } from '../../src/symbol'
+import { Type, TypeKind, TypeRepository, AnyTypeArguments, anyType, nullType, undefinedType } from '../../src/type'
 
 const emptyMembers = new SimpleSymbolTable([])
 

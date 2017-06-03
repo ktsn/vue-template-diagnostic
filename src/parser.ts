@@ -1,6 +1,6 @@
 import { Expression } from 'estree'
 import { parse } from 'esprima'
-import { Type } from './types'
+import { Type } from './type'
 import { Failable, fail, success } from './utils'
 
 export function parseExpression(expression: string): Failable<string, Expression> {
