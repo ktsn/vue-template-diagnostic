@@ -30,6 +30,8 @@ class ExpressionChecker {
         return this.typeOfCallExpression(node)
       case 'UnaryExpression':
         return this.typeOfUnaryExpression(node)
+      case 'UpdateExpression':
+        return this.typeOfUpdateExpression(node)
       case 'BinaryExpression':
         return this.typeOfBinaryExpression(node)
       case 'LogicalExpression':
@@ -82,6 +84,19 @@ class ExpressionChecker {
       default:
         throw new Error(`Unknown unary operator '${node.operator}'`)
     }
+  }
+
+  private typeOfUpdateExpression(node: ESTree.UpdateExpression): Type {
+    const type = this.typeOf(node.argument)
+
+    if (!isNumber(type) && !isAny(type)) {
+      this.addDiagnostic(
+        node,
+        `The operand of the '${node.operator}' must be of type 'any' or 'number'`
+      )
+    }
+
+    return this.getType(TypeKind.Number)
   }
 
   private typeOfBinaryExpression(node: ESTree.BinaryExpression): Type {

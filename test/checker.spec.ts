@@ -82,6 +82,32 @@ describe('Type Checker', () => {
     })
   })
 
+  describe('update operator', () => {
+    it('should pass with a number type', () => {
+      test('foo++', [], [
+        {
+          name: 'foo',
+          type: number
+        }
+      ])
+    })
+
+    it('should report with a string type', () => {
+      test('--bar', [
+        {
+          message: `The operand of the '--' must be of type 'any' or 'number'`,
+          start: 0,
+          end: 5
+        }
+      ], [
+        {
+          name: 'bar',
+          type: string
+        }
+      ])
+    })
+  })
+
   describe('binary operator', () => {
     it('should pass a "+" operator with numbers', () => {
       test('1 + 2 + 3')
