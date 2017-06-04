@@ -248,6 +248,31 @@ describe('Type Checker', () => {
       ])
     })
   })
+
+  describe('template literal', () => {
+    it('should pass with any variables', () => {
+      test('`hello, ${foo}, ${bar}`', [], [
+        {
+          name: 'foo',
+          type: number
+        },
+        {
+          name: 'bar',
+          type: string
+        }
+      ])
+    })
+
+    it('should report if undefined variables are used in it', () => {
+      test('`hello, ${msg}`', [
+        {
+          message: `'msg' is not defined`,
+          start: 10,
+          end: 13
+        }
+      ])
+    })
+  })
 })
 
 function test(

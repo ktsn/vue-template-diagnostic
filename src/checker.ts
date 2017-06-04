@@ -46,6 +46,8 @@ class ExpressionChecker {
         return this.typeOfIdentifier(node)
       case 'Literal':
         return this.typeOfLiteral(node)
+      case 'TemplateLiteral':
+        return this.typeOfTemplateLiteral(node)
       default:
         return this.getType(TypeKind.Any)
     }
@@ -284,6 +286,12 @@ class ExpressionChecker {
       default:
         throw new Error(`Unknown literal '${node.value}'`)
     }
+  }
+
+  private typeOfTemplateLiteral(node: ESTree.TemplateLiteral): Type {
+    // Touch all expressions to get diagnostics for them
+    node.expressions.forEach(exp => this.typeOf(exp))
+    return this.getType(TypeKind.String)
   }
 
   private addDiagnostic(node: ESTree.Node, message: string): void {
