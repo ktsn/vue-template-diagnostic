@@ -5,6 +5,7 @@ export enum TypeKind {
   String,
   Number,
   Boolean,
+  Symbol,
   Null,
   Undefined,
   Other
@@ -114,6 +115,10 @@ export function isNumber(type: Type): boolean {
 
 export function isString(type: Type): boolean {
   return type.kind === TypeKind.String
+}
+
+export function isSymbol(type: Type): boolean {
+  return type.kind === TypeKind.Symbol
 }
 
 export function isFunction(type: Type): boolean {

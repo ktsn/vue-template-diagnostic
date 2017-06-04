@@ -2,7 +2,7 @@ import * as ESTree from 'estree'
 import { SymbolTable } from './symbol'
 import { Diagnostic } from './diagnostic'
 
-import { Type, TypeKind, TypeRepository, unionType, isAny, isNumber, isString, isFunction, isObject } from './type'
+import { Type, TypeKind, TypeRepository, unionType, isAny, isNumber, isString, isSymbol, isFunction, isObject } from './type'
 
 export function checkExpression(
   expression: ESTree.Expression,
@@ -172,7 +172,7 @@ class ExpressionChecker {
         return this.getType(TypeKind.Boolean)
 
       case 'in':
-        if (!isNumber(left) && !isString(left)) {
+        if (!isNumber(left) && !isString(left) && !isSymbol(left)) {
           this.addDiagnostic(
             node.left,
             `The left-hand side of a 'in' operator must be of type 'any', 'number', 'string' or 'symbol'`

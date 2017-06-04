@@ -1,18 +1,19 @@
 import * as assert from 'assert'
+import * as path from 'path'
 import * as ts from 'typescript'
 import { Symbol, SimpleSymbolTable, SymbolTable } from './symbol'
-import { Type, TypeKind, TypeRepository, TypeArguments, SimpleTypeArguments, CallSignature, anyType, nullType, undefinedType } from './types'
+import { Type, TypeKind, TypeRepository, TypeArguments, SimpleTypeArguments, CallSignature, anyType, nullType, undefinedType } from './type'
 
 export interface TypeScriptContext {
   ts: typeof ts
   program: ts.Program
   checker: ts.TypeChecker
-  node: ts.Node
 }
 
 export class TypeScriptSymbol implements Symbol {
   constructor(
     private tsSymbol: ts.Symbol,
+    private node: ts.Node,
     private context: TypeScriptContext
   ) {}
 
@@ -21,22 +22,23 @@ export class TypeScriptSymbol implements Symbol {
   }
 
   get type(): Type {
-    const { checker, node } = this.context
-    const type = checker.getTypeOfSymbolAtLocation(this.tsSymbol, node)
-    return new TypeScriptType(type, this.context)
+    const { checker } = this.context
+    const type = checker.getTypeOfSymbolAtLocation(this.tsSymbol, this.node)
+    return new TypeScriptType(type, this.node, this.context)
   }
 }
 
 export class TypeScriptType implements Type {
   constructor(
     private tsType: ts.Type,
+    private node: ts.Node,
     private context: TypeScriptContext
   ) {}
 
   get name(): string {
     const symbol = this.tsType.symbol
-    if (!symbol) return '<anonymous>'
-    return symbol.getName()
+    if (symbol) return symbol.name
+    return this.context.checker.typeToString(this.tsType) || '<anonymous>'
   }
 
   get kind(): TypeKind {
@@ -57,6 +59,8 @@ export class TypeScriptType implements Type {
       return TypeKind.String
     } else if (flags & (ts.TypeFlags.Number | ts.TypeFlags.NumberLike)) {
       return TypeKind.Number
+    } else if (flags & ts.TypeFlags.ESSymbol) {
+      return TypeKind.Symbol
     } else if (flags & ts.TypeFlags.Undefined) {
       return TypeKind.Undefined
     } else if (flags & ts.TypeFlags.Null) {
@@ -70,7 +74,7 @@ export class TypeScriptType implements Type {
   get members(): SymbolTable {
     if (!this._members) {
       const symbols = this.tsType.getProperties().map(s => {
-        return new TypeScriptSymbol(s, this.context)
+        return new TypeScriptSymbol(s, this.node, this.context)
       })
       this._members = new SimpleSymbolTable(symbols)
     }
@@ -80,17 +84,17 @@ export class TypeScriptType implements Type {
   private _callSignatures: CallSignature[] | null = null
   get callSignatures(): CallSignature[] {
     if (!this._callSignatures) {
-      const { checker, node } = this.context
+      const { checker } = this.context
       const signatures = this.tsType.getCallSignatures()
 
       this._callSignatures = signatures.map(s => {
         const args = s.getParameters()
           .map(p => {
-            const type = checker.getTypeOfSymbolAtLocation(p, node)
-            return new TypeScriptType(type, this.context)
+            const type = checker.getTypeOfSymbolAtLocation(p, this.node)
+            return new TypeScriptType(type, this.node, this.context)
           })
 
-        const ret = new TypeScriptType(s.getReturnType(), this.context)
+        const ret = new TypeScriptType(s.getReturnType(), this.node, this.context)
 
         return {
           argTypes: new SimpleTypeArguments(args),
@@ -128,6 +132,9 @@ export class TypeScriptTypeRepository implements TypeRepository {
       case TypeKind.Boolean:
         res = this.cache.get(TypeKind.Boolean)
         break
+      case TypeKind.Symbol:
+        res = this.cache.get(TypeKind.Symbol)
+        break
       default:
         throw new Error(`Unexpected type kind ${kind}`)
     }
@@ -141,34 +148,52 @@ export class TypeScriptTypeRepository implements TypeRepository {
     if (this.cached) return
     this.cached = true
 
-    const lib = this.context.program.getSourceFile('typescript/lib/lib.d.ts')
-    const { checker, ts } = this.context
+    const { ts } = this.context
 
-    let res: Type
-    this.context.ts.forEachChild(lib, node => {
-      if (node.kind !== ts.SyntaxKind.InterfaceDeclaration) return
-
-      switch ((node as ts.InterfaceDeclaration).name.text) {
-        case 'String':
-          this.cache.set(
-            TypeKind.String,
-            new TypeScriptType(checker.getTypeAtLocation(node), this.context)
-          )
-          break
-        case 'Number':
-          this.cache.set(
-            TypeKind.Number,
-            new TypeScriptType(checker.getTypeAtLocation(node), this.context)
-          )
-          break
-        case 'Boolean':
-          this.cache.set(
-            TypeKind.Boolean,
-            new TypeScriptType(checker.getTypeAtLocation(node), this.context)
-          )
-        default:
-          // Do nothing
-      }
+    const origin = path.resolve(__dirname, 'type-provider.ts')
+    const program = ts.createProgram([origin], {
+      target: ts.ScriptTarget.Latest,
+      module: ts.ModuleKind.ES2015,
+      moduleResolution: ts.ModuleResolutionKind.NodeJs
     })
+    const source = program.getSourceFile(origin)
+    const checker = program.getTypeChecker()
+
+    const search = (node: ts.Node) => {
+      switch (node.kind) {
+        case ts.SyntaxKind.VariableDeclaration:
+
+          const prop = node as ts.VariableDeclaration
+          switch (prop.type!.getText(source)) {
+            case 'string':
+              this.cache.set(
+                TypeKind.String,
+                new TypeScriptType(checker.getTypeAtLocation(prop), prop, this.context)
+              )
+            case 'number':
+              this.cache.set(
+                TypeKind.Number,
+                new TypeScriptType(checker.getTypeAtLocation(prop), prop, this.context)
+              )
+            case 'boolean':
+              this.cache.set(
+                TypeKind.Boolean,
+                new TypeScriptType(checker.getTypeAtLocation(prop), prop, this.context)
+              )
+            case 'symbol':
+              this.cache.set(
+                TypeKind.Symbol,
+                new TypeScriptType(checker.getTypeAtLocation(prop), prop, this.context)
+              )
+            default:
+              // Do nothing
+          }
+
+        default:
+          ts.forEachChild(node, search)
+      }
+    }
+
+    ts.forEachChild(source, search)
   }
 }
