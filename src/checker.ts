@@ -38,6 +38,8 @@ class ExpressionChecker {
         return this.typeOfObjectExpression(node)
       case 'MemberExpression':
         return this.typeOfMemberExpression(node)
+      case 'ConditionalExpression':
+        return this.typeOfConditionalExpression(node)
       case 'Identifier':
         return this.typeOfIdentifier(node)
       case 'Literal':
@@ -233,6 +235,12 @@ class ExpressionChecker {
     }
 
     return this.getType(TypeKind.Any)
+  }
+
+  private typeOfConditionalExpression(node: ESTree.ConditionalExpression): Type {
+    const consequent = this.typeOf(node.consequent)
+    const alternate = this.typeOf(node.alternate)
+    return unionType(consequent, alternate)
   }
 
   private typeOfIdentifier(node: ESTree.Identifier): Type {
