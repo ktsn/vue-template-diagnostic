@@ -81,7 +81,14 @@ export class UndefinedType implements Type {
 export const undefinedType = new UndefinedType()
 
 export function unionType(...types: Type[]): Type {
-
+  let result: Type | undefined = types[0]
+  for (let i = 1; i < types.length; ++i) {
+    if (result !== types[i]) {
+      result = undefined
+      break
+    }
+  }
+  return result || anyType
 }
 
 export function subtypeOf(sub: Type, parent: Type): boolean {

@@ -2,7 +2,7 @@ import * as ESTree from 'estree'
 import { SymbolTable } from './symbol'
 import { Diagnostic } from './diagnostic'
 
-import { Type, TypeKind, TypeRepository, isAny, isNumber, isString, isFunction, isObject } from './type'
+import { Type, TypeKind, TypeRepository, unionType, isAny, isNumber, isString, isFunction, isObject } from './type'
 
 export function checkExpression(
   expression: ESTree.Expression,
@@ -201,8 +201,9 @@ class ExpressionChecker {
 
     switch (node.operator) {
       case '&&':
+        return right
       case '||':
-        return left.kind === right.kind ? right : this.getType(TypeKind.Any)
+        return unionType(left, right)
       default:
         throw new Error(`Unknown logical operator '${node.operator}'`)
     }
