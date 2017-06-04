@@ -10,6 +10,10 @@ export interface TypeScriptContext {
   checker: ts.TypeChecker
 }
 
+export function createTypeRepository(context: TypeScriptContext): TypeRepository {
+  return new TypeScriptTypeRepository(context)
+}
+
 export class TypeScriptSymbol implements Symbol {
   constructor(
     private tsSymbol: ts.Symbol,
