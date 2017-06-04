@@ -1,4 +1,4 @@
-# Template Diagnostics
+# vue-template-diagnostic
 
 ## License
 

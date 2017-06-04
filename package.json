@@ -1,22 +1,20 @@
 {
-  "name": "template-diagnostics",
+  "name": "vue-template-diagnostic",
   "version": "0.0.0",
   "author": "katashin",
   "description": "",
   "keywords": [],
   "license": "MIT",
-  "main": "dist/template-diagnostics.cjs.js",
-  "module": "lib/index.js",
+  "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
-    "dist",
     "lib"
   ],
-  "homepage": "https://github.com/ktsn/template-diagnostics",
-  "bugs": "https://github.com/ktsn/template-diagnostics/issues",
+  "homepage": "https://github.com/ktsn/vue-template-diagnostic",
+  "bugs": "https://github.com/ktsn/vue-template-diagnostic/issues",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ktsn/template-diagnostics.git"
+    "url": "https://github.com/ktsn/vue-template-diagnostic.git"
   },
   "scripts": {
     "prepublish": "npm run clean && npm run test && npm run build",
