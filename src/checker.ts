@@ -28,6 +28,8 @@ class ExpressionChecker {
     switch (node.type) {
       case 'CallExpression':
         return this.typeOfCallExpression(node)
+      case 'UnaryExpression':
+        return this.typeOfUnaryExpression(node)
       case 'BinaryExpression':
         return this.typeOfBinaryExpression(node)
       case 'LogicalExpression':
@@ -59,6 +61,25 @@ class ExpressionChecker {
 
     // TODO: Return appropriate return type
     return this.getType(TypeKind.Any)
+  }
+
+  private typeOfUnaryExpression(node: ESTree.UnaryExpression): Type {
+    // https://github.com/Microsoft/TypeScript/blob/v2.3.4/doc/spec.md#4.18
+    switch (node.operator) {
+      case '-':
+      case '+':
+      case '~':
+        return this.getType(TypeKind.Number)
+      case '!':
+      case 'delete':
+        return this.getType(TypeKind.Boolean)
+      case 'void':
+        return this.getType(TypeKind.Undefined)
+      case 'typeof':
+        return this.getType(TypeKind.String)
+      default:
+        throw new Error(`Unknown unary operator '${node.operator}'`)
+    }
   }
 
   private typeOfBinaryExpression(node: ESTree.BinaryExpression): Type {
