@@ -22,27 +22,31 @@ describe('Integration test', () => {
   it('should report the result of the diagnostic', () => {
     const source = program.getSourceFile('test/fixtures/test.ts')
 
-    const host = createComponentHost(source, context)!
-    assert(host)
+    const host = createComponentHost(source, context)
 
-    const repository = createTypeRepository(context)
+    if (host) {
+      const repository = createTypeRepository(context)
 
-    const exp = parseExpression('123 - msg + ", Vue.js!" + foo') as any
-    assert(!exp.failed)
+      const exp = parseExpression('123 - msg + ", Vue.js!" + foo')
 
-    const diagnostics = checkExpression(exp.value, host.members, repository)
+      if (!exp.failed) {
+        const diagnostics = checkExpression(exp.value, host.members, repository)
 
-    assert.deepStrictEqual(diagnostics, [
-      {
-        message: `The right-hand side of a binary operator '-' must be of type 'number' or 'any'`,
-        start: 6,
-        end: 9
-      },
-      {
-        message: `'foo' is not defined`,
-        start: 26,
-        end: 29
+        assert.deepStrictEqual(diagnostics, [
+          {
+            message: `The right-hand side of a binary operator '-' must be of type 'number' or 'any'`,
+            start: 6,
+            end: 9
+          },
+          {
+            message: `'foo' is not defined`,
+            start: 26,
+            end: 29
+          }
+        ])
+        return
       }
-    ])
+    }
+    assert(false)
   })
 })
