@@ -154,7 +154,7 @@ export class TypeScriptTypeRepository implements TypeRepository {
 
     const { ts } = this.context
 
-    const origin = path.resolve(__dirname, 'type-provider.ts')
+    const origin = path.resolve(__dirname, '../data/type-provider.ts')
     const program = ts.createProgram([origin], {
       target: ts.ScriptTarget.Latest,
       module: ts.ModuleKind.ES2015,

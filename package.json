@@ -8,7 +8,8 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "files": [
-    "lib"
+    "lib",
+    "data"
   ],
   "homepage": "https://github.com/ktsn/vue-template-diagnostic",
   "bugs": "https://github.com/ktsn/vue-template-diagnostic/issues",
