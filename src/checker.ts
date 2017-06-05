@@ -105,10 +105,6 @@ class ExpressionChecker {
     const left = this.typeOf(node.left)
     const right = this.typeOf(node.right)
 
-    if (isAny(left) || isAny(right)) {
-      return this.getType(TypeKind.Any)
-    }
-
     // https://github.com/Microsoft/TypeScript/blob/v2.3.4/doc/spec.md#4.19
     switch (node.operator) {
       case '<':
@@ -119,7 +115,10 @@ class ExpressionChecker {
       case '!=':
       case '===':
       case '!==':
-        if (left.kind !== right.kind) {
+        if (
+          left.kind !== right.kind
+          && !isAny(left) && !isAny(right)
+        ) {
           this.addDiagnostic(
             node,
             `The binary operator '${node.operator}' cannot be applied to types '${left.name}' and '${right.name}'`
@@ -138,7 +137,7 @@ class ExpressionChecker {
       case '&':
       case '|':
       case '^':
-        if (!isNumber(left)) {
+        if (!isNumber(left) && !isAny(left)) {
           this.addDiagnostic(
             node.left,
             `The left-hand side of a binary operator '${node.operator}' must be of type 'number' or 'any'`
@@ -146,7 +145,7 @@ class ExpressionChecker {
           return this.getType(TypeKind.Any)
         }
 
-        if (!isNumber(right)) {
+        if (!isNumber(right) && !isAny(right)) {
           this.addDiagnostic(
             node.right,
             `The right-hand side of a binary operator '${node.operator}' must be of type 'number' or 'any'`
@@ -165,6 +164,10 @@ class ExpressionChecker {
           return this.getType(TypeKind.Number)
         }
 
+        if (isAny(left) || isAny(right)) {
+          return this.getType(TypeKind.Any)
+        }
+
         this.addDiagnostic(
           node,
           `The binary operator '+' cannot be applied to type '${left.name}' and '${right.name}'`
@@ -172,7 +175,7 @@ class ExpressionChecker {
         return this.getType(TypeKind.Any)
 
       case 'instanceof':
-        if (!isObject(left)) {
+        if (!isObject(left) && !isAny(left)) {
           this.addDiagnostic(
             node.left,
             `The left-hand side of 'instanceof' must be of type 'any' or 'object'`
@@ -180,7 +183,7 @@ class ExpressionChecker {
           return this.getType(TypeKind.Any)
         }
 
-        if (!isFunction(right)) {
+        if (!isFunction(right) && !isAny(right)) {
           this.addDiagnostic(
             node.right,
             `The right-hand side of 'instanceof' must be of type 'any' or 'Function'`
@@ -191,7 +194,7 @@ class ExpressionChecker {
         return this.getType(TypeKind.Boolean)
 
       case 'in':
-        if (!isNumber(left) && !isString(left) && !isSymbol(left)) {
+        if (!isNumber(left) && !isString(left) && !isSymbol(left) && !isAny(left)) {
           this.addDiagnostic(
             node.left,
             `The left-hand side of a 'in' operator must be of type 'any', 'number', 'string' or 'symbol'`
@@ -199,7 +202,7 @@ class ExpressionChecker {
           return this.getType(TypeKind.Any)
         }
 
-        if (!isObject(right)) {
+        if (!isObject(right) && !isAny(right)) {
           this.addDiagnostic(
             node.right,
             `The right-hand side of a 'in' operator must be of type 'any' or 'object'`

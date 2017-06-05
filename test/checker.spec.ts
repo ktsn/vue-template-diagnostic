@@ -282,5 +282,5 @@ function test(
 ) {
   const { value } = parseExpression(expression) as any
   const res = checkExpression(value, new SimpleSymbolTable(scope), typeRepository)
-  assert.deepStrictEqual(res, diagnostics)
+  assert.deepStrictEqual(res, diagnostics, `Expression: ${expression}`)
 }
