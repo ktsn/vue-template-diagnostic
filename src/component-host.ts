@@ -9,15 +9,23 @@ export interface ComponentHost {
 export function createComponentHost(
   source: ts.SourceFile,
   context: TypeScriptContext
-): ComponentHost | undefined {
+): ComponentHost | null {
   const node = getExportedExpression(source)
-  if (!node) return
+  if (!node) return null
 
   const type = context.checker.getTypeAtLocation(node)
-  const component = getInstanceType(type)
-  if (!component) return
+  const instanceType = getInstanceType(type)
+  if (!instanceType) return null
 
-  const members = component.getProperties()
+  return createComponentHostByType(instanceType, node, context)
+}
+
+export function createComponentHostByType(
+  type: ts.Type,
+  node: ts.Node,
+  context: TypeScriptContext
+): ComponentHost {
+  const members = type.getProperties()
     .map(p => {
       return new TypeScriptSymbol(p, node, context)
     })
