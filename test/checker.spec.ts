@@ -1,6 +1,8 @@
+import * as ESTree from 'estree'
 import * as assert from 'power-assert'
 import { parseExpression } from '../src/parser'
 import { checkExpression } from '../src/checker'
+import { desugarListener } from '../src/desugar'
 import { SimpleSymbolTable, Symbol } from '../src/symbol'
 import { Diagnostic } from '../src/diagnostic'
 import { number, string, boolean, func, obj, typeRepository } from './stubs/type-repository'
@@ -103,6 +105,68 @@ describe('Type Checker', () => {
         {
           name: 'bar',
           type: string
+        }
+      ])
+    })
+  })
+
+  describe('arrow function expression', () => {
+    it('should pass an arrow function', () => {
+      test('(foo, { bar }) => foo + bar')
+      test('(foo = 123, [bar], ...baz) => foo + bar + baz[0]')
+    })
+
+    it('should check the function body', () => {
+      test('foo => bar', [
+        {
+          message: `'bar' is not defined`,
+          start: 7,
+          end: 10
+        }
+      ])
+    })
+
+    // esprima does not support async arrow function yet
+    xit('should report an async function', () => {
+      test('async () => 123', [
+        {
+          message: `An async function expression is not allowed in a template`,
+          start: 0,
+          end: 15
+        }
+      ])
+    })
+
+    it('should report an non-expression arrow function', () => {
+      test('() => { 123 }', [
+        {
+          message: `An arrow function that has curly braces is not allowed`,
+          start: 0,
+          end: 13
+        }
+      ])
+    })
+  })
+
+  describe('function expression', () => {
+    it('should always report', () => {
+      test('!function(a, b) { return a + b }', [
+        {
+          message: `Function expression is not allowed in a template, use arrow function expression instead`,
+          start: 1,
+          end: 32
+        }
+      ])
+    })
+  })
+
+  describe('unary operator', () => {
+    it('should check the operand type', () => {
+      test('~(12 - "")', [
+        {
+          message: `The right-hand side of a binary operator '-' must be of type 'number' or 'any'`,
+          start: 7,
+          end: 9
         }
       ])
     })
@@ -273,14 +337,45 @@ describe('Type Checker', () => {
       ])
     })
   })
+
+  describe('desugar', () => {
+    it('should desugar a native event listener', () => {
+      test('foo($event)', [], [
+        {
+          name: 'foo',
+          type: func
+        }
+      ], exp => desugarListener(exp, true))
+    })
+
+    it('should desugar a component event listener', () => {
+      test('foo(arguments[0])', [], [
+        {
+          name: 'foo',
+          type: func
+        }
+      ], exp => desugarListener(exp, false))
+    })
+
+    it('should report a desugared expression', () => {
+      test('foo + 123', [
+        {
+          message: `'foo' is not defined`,
+          start: 0,
+          end: 3
+        }
+      ], [], exp => desugarListener(exp, true))
+    })
+  })
 })
 
 function test(
   expression: string,
   diagnostics: Diagnostic[] = [],
-  scope: Symbol[] = []
+  scope: Symbol[] = [],
+  transform: (exp: ESTree.Expression) => ESTree.Expression = x => x
 ) {
   const { value } = parseExpression(expression) as any
-  const res = checkExpression(value, new SimpleSymbolTable(scope), typeRepository)
+  const res = checkExpression(transform(value), new SimpleSymbolTable(scope), typeRepository)
   assert.deepStrictEqual(res, diagnostics, `Expression: ${expression}`)
 }

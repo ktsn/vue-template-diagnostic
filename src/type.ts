@@ -57,7 +57,7 @@ export class SimpleTypeArguments implements TypeArguments {
 export class AnyType implements Type {
   name = 'any'
   kind = TypeKind.Any
-  members = new AnySymbolTable()
+  members = new AnySymbolTable(this)
   callSignatures = [{
     argTypes: new AnyTypeArguments(),
     returnType: this as AnyType
