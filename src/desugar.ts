@@ -1,5 +1,4 @@
 import * as ESTree from 'estree'
-import { Span } from './diagnostic'
 
 export function desugarListener(exp: ESTree.Expression, native: boolean): ESTree.Expression {
   // If the expression is identifier, it's a shorthand of `foo($event)`
