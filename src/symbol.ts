@@ -1,4 +1,4 @@
-import { Type, anyType } from './type'
+import { Type, AnyType } from './type'
 
 export interface Symbol {
   name: string
@@ -11,10 +11,12 @@ export interface SymbolTable {
 }
 
 export class AnySymbolTable implements SymbolTable {
+  constructor(private anyType: AnyType) {}
+
   getByName(name: string): Symbol {
     return {
       name,
-      type: anyType
+      type: this.anyType
     }
   }
 
