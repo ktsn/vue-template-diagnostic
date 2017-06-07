@@ -108,6 +108,18 @@ describe('Type Checker', () => {
     })
   })
 
+  describe('unary operator', () => {
+    it('should check the operand type', () => {
+      test('~(12 - "")', [
+        {
+          message: `The right-hand side of a binary operator '-' must be of type 'number' or 'any'`,
+          start: 7,
+          end: 9
+        }
+      ])
+    })
+  })
+
   describe('binary operator', () => {
     it('should pass a "+" operator with numbers', () => {
       test('1 + 2 + 3')

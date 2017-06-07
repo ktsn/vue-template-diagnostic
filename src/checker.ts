@@ -70,6 +70,9 @@ class ExpressionChecker {
   }
 
   private typeOfUnaryExpression(node: ESTree.UnaryExpression): Type {
+    // Check the operand
+    this.typeOf(node.argument)
+
     // https://github.com/Microsoft/TypeScript/blob/v2.3.4/doc/spec.md#4.18
     switch (node.operator) {
       case '-':
