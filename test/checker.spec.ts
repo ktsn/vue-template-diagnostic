@@ -1,6 +1,8 @@
+import * as ESTree from 'estree'
 import * as assert from 'power-assert'
 import { parseExpression } from '../src/parser'
 import { checkExpression } from '../src/checker'
+import { desugarListener } from '../src/desugar'
 import { SimpleSymbolTable, Symbol } from '../src/symbol'
 import { Diagnostic } from '../src/diagnostic'
 import { number, string, boolean, func, obj, typeRepository } from './stubs/type-repository'
@@ -335,14 +337,45 @@ describe('Type Checker', () => {
       ])
     })
   })
+
+  describe('desugar', () => {
+    it('should desugar a native event listener', () => {
+      test('foo($event)', [], [
+        {
+          name: 'foo',
+          type: func
+        }
+      ], exp => desugarListener(exp, true))
+    })
+
+    it('should desugar a component event listener', () => {
+      test('foo(arguments[0])', [], [
+        {
+          name: 'foo',
+          type: func
+        }
+      ], exp => desugarListener(exp, false))
+    })
+
+    it('should report a desugared expression', () => {
+      test('foo + 123', [
+        {
+          message: `'foo' is not defined`,
+          start: 0,
+          end: 3
+        }
+      ], [], exp => desugarListener(exp, true))
+    })
+  })
 })
 
 function test(
   expression: string,
   diagnostics: Diagnostic[] = [],
-  scope: Symbol[] = []
+  scope: Symbol[] = [],
+  transform: (exp: ESTree.Expression) => ESTree.Expression = x => x
 ) {
   const { value } = parseExpression(expression) as any
-  const res = checkExpression(value, new SimpleSymbolTable(scope), typeRepository)
+  const res = checkExpression(transform(value), new SimpleSymbolTable(scope), typeRepository)
   assert.deepStrictEqual(res, diagnostics, `Expression: ${expression}`)
 }
