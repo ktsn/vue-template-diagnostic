@@ -7,7 +7,11 @@ export interface Symbol {
 
 export interface SymbolTable {
   getByName(name: string): Symbol | undefined
-  concat(table: SymbolTable): SymbolTable
+  concat(symbols: Symbol[]): SymbolTable
+}
+
+export function createSymbol(name: string, type: Type): Symbol {
+  return { name, type }
 }
 
 export class AnySymbolTable implements SymbolTable {
@@ -20,7 +24,7 @@ export class AnySymbolTable implements SymbolTable {
     }
   }
 
-  concat(table: SymbolTable): SymbolTable {
+  concat(symbols: Symbol[]): SymbolTable {
     return this
   }
 }
@@ -38,12 +42,9 @@ export class SimpleSymbolTable {
     return this.table.get(name)
   }
 
-  concat(table: SimpleSymbolTable | AnySymbolTable): SymbolTable {
-    if (table instanceof AnySymbolTable) return table
-    const symbols: Symbol[] = []
-    this.forEach(value => symbols.push(value))
-    table.forEach(value => symbols.push(value))
-    return new SimpleSymbolTable(symbols)
+  concat(symbols: Symbol[]): SymbolTable {
+    const res = Array.from(this.table.values()).concat(symbols)
+    return new SimpleSymbolTable(res)
   }
 
   forEach(fn: (symbol: Symbol, name: string) => void): void {
