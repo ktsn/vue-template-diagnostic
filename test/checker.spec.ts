@@ -108,6 +108,56 @@ describe('Type Checker', () => {
     })
   })
 
+  describe('arrow function expression', () => {
+    it('should pass an arrow function', () => {
+      test('(foo, { bar }) => foo + bar')
+      test('(foo = 123, [bar], ...baz) => foo + bar + baz[0]')
+    })
+
+    it('should check the function body', () => {
+      test('foo => bar', [
+        {
+          message: `'bar' is not defined`,
+          start: 7,
+          end: 10
+        }
+      ])
+    })
+
+    // esprima does not support async arrow function yet
+    xit('should report an async function', () => {
+      test('async () => 123', [
+        {
+          message: `An async function expression is not allowed in a template`,
+          start: 0,
+          end: 15
+        }
+      ])
+    })
+
+    it('should report an non-expression arrow function', () => {
+      test('() => { 123 }', [
+        {
+          message: `An arrow function that has curly braces is not allowed`,
+          start: 0,
+          end: 13
+        }
+      ])
+    })
+  })
+
+  describe('function expression', () => {
+    it('should always report', () => {
+      test('!function(a, b) { return a + b }', [
+        {
+          message: `Function expression is not allowed in a template, use arrow function expression instead`,
+          start: 1,
+          end: 32
+        }
+      ])
+    })
+  })
+
   describe('unary operator', () => {
     it('should check the operand type', () => {
       test('~(12 - "")', [

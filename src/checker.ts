@@ -1,5 +1,5 @@
 import * as ESTree from 'estree'
-import { SymbolTable } from './symbol'
+import { createSymbol, Symbol, SymbolTable } from './symbol'
 import { Diagnostic } from './diagnostic'
 
 import { Type, TypeKind, TypeRepository, unionType, isAny, isNumber, isString, isSymbol, isFunction, isObject } from './type'
@@ -40,6 +40,10 @@ class ExpressionChecker {
         return this.typeOfObjectExpression(node)
       case 'MemberExpression':
         return this.typeOfMemberExpression(node)
+      case 'ArrowFunctionExpression':
+        return this.typeOfArrowFunctionExpression(node)
+      case 'FunctionExpression':
+        return this.typeOfFunctionExpression(node)
       case 'ConditionalExpression':
         return this.typeOfConditionalExpression(node)
       case 'Identifier':
@@ -260,6 +264,42 @@ class ExpressionChecker {
     return this.getType(TypeKind.Any)
   }
 
+  private typeOfArrowFunctionExpression(node: ESTree.ArrowFunctionExpression): Type {
+    if (node.async) {
+      this.addDiagnostic(
+        node,
+        `An async function expression is not allowed in a template`
+      )
+    }
+
+    if (!node.expression) {
+      this.addDiagnostic(
+        node,
+        `An arrow function that has curly braces is not allowed`
+      )
+    }
+
+    const paramSymbols = node.params.reduce(
+      (acc, p) => this.collectParams(acc, p),
+      [] as Symbol[]
+    )
+
+    const prev = this.scope
+    this.scope = this.scope.concat(paramSymbols)
+    this.typeOf(node.body)
+    this.scope = prev
+
+    return this.getType(TypeKind.Any)
+  }
+
+  private typeOfFunctionExpression(node: ESTree.FunctionExpression): Type {
+    this.addDiagnostic(
+      node,
+      `Function expression is not allowed in a template, use arrow function expression instead`
+    )
+    return this.getType(TypeKind.Any)
+  }
+
   private typeOfConditionalExpression(node: ESTree.ConditionalExpression): Type {
     const consequent = this.typeOf(node.consequent)
     const alternate = this.typeOf(node.alternate)
@@ -298,6 +338,33 @@ class ExpressionChecker {
     // Touch all expressions to get diagnostics for them
     node.expressions.forEach(exp => this.typeOf(exp))
     return this.getType(TypeKind.String)
+  }
+
+  private collectParams(acc: Symbol[], node: ESTree.Pattern): Symbol[] {
+    switch (node.type) {
+      case 'Identifier':
+        return acc.concat(
+          createSymbol(node.name, this.getType(TypeKind.Any))
+        )
+      case 'ObjectPattern':
+        return node.properties.reduce((acc, p) => {
+          return this.collectParams(acc, p.value)
+        }, acc)
+      case 'ArrayPattern':
+        return node.elements.reduce((acc, e) => {
+          return this.collectParams(acc, e)
+        }, acc)
+      case 'RestElement':
+        return this.collectParams(acc, node.argument)
+      case 'AssignmentPattern':
+        return this.collectParams(acc, node.left)
+      default:
+        this.addDiagnostic(
+          node,
+          `Unexpected token type ${node.type}`
+        )
+        return acc
+    }
   }
 
   private addDiagnostic(node: ESTree.Node, message: string): void {
