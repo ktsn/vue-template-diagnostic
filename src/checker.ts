@@ -53,6 +53,10 @@ class ExpressionChecker {
       case 'TemplateLiteral':
         return this.typeOfTemplateLiteral(node)
       default:
+        this.addDiagnostic(
+          node,
+          `Unexpected token '${node.type}'`
+        )
         return this.getType(TypeKind.Any)
     }
   }
@@ -265,17 +269,18 @@ class ExpressionChecker {
   }
 
   private typeOfArrowFunctionExpression(node: ESTree.ArrowFunctionExpression): Type {
-    if (node.async) {
-      this.addDiagnostic(
-        node,
-        `An async function expression is not allowed in a template`
-      )
-    }
-
     if (!node.expression) {
       this.addDiagnostic(
         node,
         `An arrow function that has curly braces is not allowed`
+      )
+      return this.getType(TypeKind.Any)
+    }
+
+    if (node.async) {
+      this.addDiagnostic(
+        node,
+        `An async function expression is not allowed in a template`
       )
     }
 
@@ -284,12 +289,7 @@ class ExpressionChecker {
       [] as Symbol[]
     )
 
-    const prev = this.scope
-    this.scope = this.scope.concat(paramSymbols)
-    this.typeOf(node.body)
-    this.scope = prev
-
-    return this.getType(TypeKind.Any)
+    return this.pushScope(paramSymbols, () => this.typeOf(node.body))
   }
 
   private typeOfFunctionExpression(node: ESTree.FunctionExpression): Type {
@@ -377,5 +377,16 @@ class ExpressionChecker {
 
   private getType(kind: TypeKind): Type {
     return this.repository.getTypeByKind(kind)
+  }
+
+  private pushScope<R>(symbols: Symbol[], fn: (this: this) => R): R {
+    const prev = this.scope
+    this.scope = this.scope.concat(symbols)
+
+    const res = fn.call(this)
+
+    this.scope = prev
+
+    return res
   }
 }
