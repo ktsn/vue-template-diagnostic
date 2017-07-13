@@ -1,13 +1,14 @@
 import { Expression } from 'estree'
-import { parse } from 'esprima'
+import { parse as parseJs } from 'espree'
 import { Type } from './type'
 import { Failable, fail, success } from './utils'
 
 export function parseExpression(expression: string): Failable<string, Expression> {
   let program
   try {
-    program = parse(expression, {
-      range: true
+    program = parseJs(expression, {
+      range: true,
+      ecmaVersion: 8
     })
   } catch (err) {
     return fail(err.message)

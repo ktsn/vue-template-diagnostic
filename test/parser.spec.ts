@@ -15,7 +15,7 @@ describe('Parser', () => {
 
   it('should provide an error if there is a syntax error', () => {
     const { error } = parseExpression('() =>> {}') as any
-    assert(error === 'Line 1: Unexpected token >')
+    assert(error === 'Unexpected token >')
   })
 
   it('should provide an error if non-expression is provided', () => {

@@ -126,8 +126,7 @@ describe('Type Checker', () => {
       ])
     })
 
-    // esprima does not support async arrow function yet
-    xit('should report an async function', () => {
+    it('should report an async function', () => {
       test('async () => 123', [
         {
           message: `An async function expression is not allowed in a template`,
