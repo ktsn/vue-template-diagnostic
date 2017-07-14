@@ -1,6 +1,6 @@
 export { createComponentHost, createComponentHostByType } from './component-host'
-export { parseExpression } from './parser'
-export { checkExpression } from './checker'
+export { parseTemplate, parseExpression } from './parser'
+export { checkTemplate } from './checker'
 export { Symbol, SymbolTable } from './symbol'
 export { TypeKind, Type, TypeRepository } from './type'
 export { Diagnostic } from './diagnostic'

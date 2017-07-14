@@ -17,3 +17,9 @@ export function fail<E>(err: E): Failable<E, any> {
 export function success<V>(val: V): Failable<any, V> {
   return { failed: false, value: val }
 }
+
+export function flatMap<T, R>(list: T[], fn: (val: T) => R[]): R[] {
+  return list.reduce((acc, item) => {
+    return acc.concat(fn(item))
+  }, [] as R[])
+}

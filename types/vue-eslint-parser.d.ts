@@ -1,6 +1,11 @@
 declare module 'vue-eslint-parser' {
   import * as ESTree from 'estree'
 
+  type Node = VNode | ESTree.Node
+
+  type VNode = VIdentifier | VText | VExpressionContainer | VForExpression
+    | VDirectiveKey | VAttributeValue | VAttribute | VStartTag | VEndTag | VElement
+
   export interface BaseNode extends ESTree.BaseNode {
     range: [number, number]
   }
@@ -17,7 +22,7 @@ declare module 'vue-eslint-parser' {
 
   export interface VExpressionContainer extends BaseNode {
     type: 'VExpressionContainer'
-    expression: ESTree.Expression | null
+    expression: ESTree.Expression | VForExpression | null
     syntaxError: Error | null
     references: Reference[]
   }

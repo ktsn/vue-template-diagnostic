@@ -1,31 +1,47 @@
 import * as ESTree from 'estree'
+import * as VTree from 'vue-eslint-parser'
 import { createSymbol, Symbol, SymbolTable } from './symbol'
 import { Diagnostic } from './diagnostic'
+import { flatMap } from './utils'
 
 import { Type, TypeKind, TypeRepository, unionType, isAny, isNumber, isString, isSymbol, isFunction, isObject } from './type'
 
-export function checkExpression(
-  expression: ESTree.Expression,
+export function checkTemplate(
+  ast: VTree.Node,
   scope: SymbolTable,
   repository: TypeRepository
 ): Diagnostic[] {
-  const checker = new ExpressionChecker(scope, repository)
-  return checker.check(expression)
+  const checker = new TemplateChecker(scope, repository)
+  return checker.check(ast)
 }
 
-class ExpressionChecker {
+class TemplateChecker {
   private diagnostics: Diagnostic[]
 
   constructor(private scope: SymbolTable, private repository: TypeRepository) {}
 
-  check(expression: ESTree.Expression): Diagnostic[] {
+  check(ast: VTree.Node): Diagnostic[] {
     this.diagnostics = []
-    this.typeOf(expression)
+    this.typeOf(ast)
     return this.diagnostics
   }
 
-  private typeOf(node: ESTree.Node): Type {
+  private typeOf(node: VTree.Node): Type {
     switch (node.type) {
+      case 'VIdentifier':
+      case 'VText':
+      case 'VDirectiveKey':
+      case 'VAttributeValue':
+        // Ignore above types of node
+        return this.getType(TypeKind.Any)
+      case 'VExpressionContainer':
+        return this.typeOfVExpressionContainer(node)
+      case 'VAttribute':
+        return this.typeOfVAttribute(node)
+      case 'VElement':
+        return this.typeOfVElement(node)
+      case 'VForExpression':
+        return this.typeOfVForExpression(node)
       case 'CallExpression':
         return this.typeOfCallExpression(node)
       case 'UnaryExpression':
@@ -59,6 +75,50 @@ class ExpressionChecker {
         )
         return this.getType(TypeKind.Any)
     }
+  }
+
+  private typeOfVExpressionContainer(node: VTree.VExpressionContainer): Type {
+    if (node.syntaxError) {
+      this.addDiagnostic(node, node.syntaxError.message)
+    }
+
+    if (node.expression) {
+      return this.typeOf(node.expression)
+    }
+
+    return this.getType(TypeKind.Any)
+  }
+
+  private typeOfVAttribute(node: VTree.VAttribute): Type {
+    if (node.directive && node.value) {
+      return this.typeOf(node.value)
+    }
+    return this.getType(TypeKind.Any)
+  }
+
+  private typeOfVElement(node: VTree.VElement): Type {
+    const vFor = this.extractScopeAttr(node.startTag.attributes)
+
+    let symbols: Symbol[] = []
+    if (vFor && vFor.value) {
+      const patterns = (vFor.value.expression as VTree.VForExpression).left
+      this.typeOf(vFor)
+      symbols = flatMap(patterns, p => this.collectParams([], p))
+    }
+
+    return this.pushScope(symbols, () => {
+      node.startTag.attributes
+        .filter(attr => attr !== vFor)
+        .forEach(attr => this.typeOf(attr))
+
+      node.children.forEach(child => this.typeOf(child))
+
+      return this.getType(TypeKind.Any)
+    })
+  }
+
+  private typeOfVForExpression(node: VTree.VForExpression): Type {
+    return this.typeOf(node.right)
   }
 
   private typeOfCallExpression(node: ESTree.CallExpression): Type {
@@ -340,6 +400,13 @@ class ExpressionChecker {
     return this.getType(TypeKind.String)
   }
 
+  private extractScopeAttr(attributes: VTree.VAttribute[]): VTree.VDirectiveAttribute | undefined {
+    const res = attributes.find(attr => {
+      return attr.directive && attr.key.name === 'for'
+    })
+    return res as VTree.VDirectiveAttribute
+  }
+
   private collectParams(acc: Symbol[], node: ESTree.Pattern): Symbol[] {
     switch (node.type) {
       case 'Identifier':
@@ -367,7 +434,7 @@ class ExpressionChecker {
     }
   }
 
-  private addDiagnostic(node: ESTree.Node, message: string): void {
+  private addDiagnostic(node: VTree.Node, message: string): void {
     this.diagnostics.push({
       message,
       start: node.range![0],

@@ -4,7 +4,7 @@ import * as ts from 'typescript'
 import {
   createComponentHost,
   parseExpression,
-  checkExpression,
+  checkTemplate,
   createTypeRepository
 } from '../src/index'
 
@@ -30,7 +30,7 @@ describe('Integration test', () => {
       const exp = parseExpression('123 - msg + ", Vue.js!" + foo')
 
       if (!exp.failed) {
-        const diagnostics = checkExpression(exp.value, host.members, repository)
+        const diagnostics = checkTemplate(exp.value, host.members, repository)
 
         assert.deepStrictEqual(diagnostics, [
           {

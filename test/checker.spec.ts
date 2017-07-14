@@ -1,7 +1,7 @@
 import * as ESTree from 'estree'
 import * as assert from 'power-assert'
 import { parseExpression } from '../src/parser'
-import { checkExpression } from '../src/checker'
+import { checkTemplate } from '../src/checker'
 import { desugarListener } from '../src/desugar'
 import { SimpleSymbolTable, Symbol } from '../src/symbol'
 import { Diagnostic } from '../src/diagnostic'
@@ -375,6 +375,6 @@ function test(
   transform: (exp: ESTree.Expression) => ESTree.Expression = x => x
 ) {
   const { value } = parseExpression(expression) as any
-  const res = checkExpression(transform(value), new SimpleSymbolTable(scope), typeRepository)
+  const res = checkTemplate(transform(value), new SimpleSymbolTable(scope), typeRepository)
   assert.deepStrictEqual(res, diagnostics, `Expression: ${expression}`)
 }
